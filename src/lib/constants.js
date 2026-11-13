@@ -69,7 +69,7 @@ export const EXERCISES = {
     number: '04',
     name: 'The Memory Snapshot',
     kind: 'Observation recall',
-    blurb: 'Study an arrangement for 15 seconds. Then find the three things that changed.',
+    blurb: 'Study an arrangement of shapes. Then find what moved, changed or appeared.',
     primarySkill: 'recall',
   },
   auditor: {
@@ -98,16 +98,3 @@ export const SKILL_TO_EXERCISE = {
   critical: 'detective',
   recall: 'memory',
 }
-
-// 30-day progression. Odd days follow the plan; even days are adaptive.
-export const WEEKS = [
-  { n: 1, title: 'Learn to notice', detail: 'Slow observation, visual details and object recall.',
-    plan: ['observer', 'memory', 'observer', 'memory', 'observer', 'memory', 'auditor'] },
-  { n: 2, title: 'Learn to compare', detail: 'Spot inconsistencies, differences and missing information.',
-    plan: ['auditor', 'detective', 'memory', 'auditor', 'detective', 'auditor', 'proofreader'] },
-  { n: 3, title: 'Learn to verify', detail: 'Numbers, written details, assumptions and accuracy.',
-    plan: ['proofreader', 'auditor', 'detective', 'proofreader', 'auditor', 'proofreader', 'observer'] },
-  { n: 4, title: 'Apply to real life', detail: 'Emails, presentations, instructions, everyday decisions.',
-    plan: ['proofreader', 'detective', 'auditor', 'proofreader', 'detective', 'memory', 'auditor', 'detective', 'proofreader'] },
-]
-export const PROGRAM_DAYS = 30

@@ -16,7 +16,7 @@ No leaderboards, no social sharing, no badges, no endless levels. A quiet daily 
 | 04 | **The Memory Snapshot** | Observation recall | Study a grid of shapes for 15 s, then find the three things that moved, changed colour, changed shape or appeared. |
 | 05 | **The Auditor** | Analytical attention | Compare two versions of a budget, spec, project plan, price list or guest list and find the 5 subtle differences. |
 
-Observer, Memory Snapshot and Auditor content is generated from a seeded RNG, so every day is new but the same day always produces the same challenge. Proofreader and Detective use a curated question bank (`src/data/`).
+Every exercise scales from level 1 to 5 (study time, items, number and subtlety of errors). Content is generated from a seeded RNG, plus curated documents and cases in `src/data/`.
 
 ## Learn from what you missed
 
@@ -29,23 +29,28 @@ Every question is tagged with a skill and the *trap* it sets. After each challen
 
 ## Dashboard and scoring
 
-- **Daily scorecard** — accuracy (x/y, with false flags counted against the percentage), time taken, day streak, weekly accuracy.
+- **Daily scorecard**: accuracy (x/y, with false flags counted against the percentage), time taken, day streak, weekly accuracy, plus **Finished** and **On time** rates.
+- **Exercise levels**: your current level (1–5) in each exercise.
 - **Attention Profile** — recency-weighted accuracy over your last 40 items per skill: Visual observation, Written accuracy, Numerical accuracy, Critical evaluation, Recall. Skills show as *calibrating* until 8 items have been measured.
-- **14-day accuracy trend**, **why you miss things** (misses by cause), **30-day progression** and recent sessions.
+- **14-day accuracy trend**, **why you miss things** (misses by cause), the **90-day map** and recent sessions. The **Programme** tab shows the full plan and what your next level unlocks.
 - *Load sample data* in Settings to preview a populated dashboard.
 
 Scores reflect performance on these exercises only. They are not a cognitive, personality or health assessment.
 
-## The adaptive engine — 30-day progression
+## The 90-day programme
 
-| Week | Theme | Focus |
-|---|---|---|
-| 1 | Learn to notice | Slow observation, visual details and object recall |
-| 2 | Learn to compare | Inconsistencies, differences and missing information |
-| 3 | Learn to verify | Numbers, written details, assumptions and accuracy |
-| 4 | Apply to real life | Emails, presentations, instructions, everyday decisions |
+Three months, thirteen blocks, mixed and matched daily by your ability to finish. Full design: **[docs/PROGRAM.md](docs/PROGRAM.md)**.
 
-Odd days follow the programme. Even days (and every day after Day 30) are **adaptive**: they target the trap you fell for most in your last session, or your weakest skill if you made no mistakes. Programme days are also weighted toward your current focus.
+| Month | Theme | Blocks | Levels |
+|---|---|---|---|
+| 1 · Foundations | See clearly | Learn to notice → Learn to compare → Learn to verify → Apply to real life → checkpoint | 1–3 |
+| 2 · Depth | Hold more, faster | Faster eyes → Numbers that lie → Read between the lines → Where things are → checkpoint | up to 4 |
+| 3 · Mastery | Apply it for real | Documents at work → Claims and decisions → No safety net → Your weak spots → final checkpoint | up to 5 |
+
+- **Daily mix:** each block weights its exercises. The picker then boosts the exercise that trains your most recent trap and your weakest skill, and avoids repeating yesterday's exercise.
+- **Levels 1–5 per exercise:** two sessions in a row at ≥85% within 5 minutes moves you up a level. Under 50%, over 8 minutes, or leaving early moves you down one.
+- **Recovery days:** after leaving a session early, two struggles in a row, or 3+ days away, you get a lighter session on the exercise you're doing best.
+- **Content for 90 days:** Observer, Memory and Auditor are generated. Proofreader and Detective combine curated documents with generated invoices, emails, product pages and meeting notes.
 
 NOTICE trains four related abilities, because noticing more and making fewer mistakes are not the same thing: **visual attention** (spotting a small inconsistency), **critical evaluation** (catching a claim that doesn't hold up), **recall** (remembering what you saw), and **analytical accuracy** (checking one number against another).
 

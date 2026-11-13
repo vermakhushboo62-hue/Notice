@@ -3,21 +3,20 @@ import { makeRng } from '../lib/rng.js'
 export const SHAPES = ['circle', 'square', 'triangle', 'star', 'diamond']
 export const MEM_COLORS = { blue: '#3e6ea8', orange: '#d9813a', green: '#4f8a5b', purple: '#7a5a9e', yellow: '#e2b93b' }
 const COLOR_KEYS = Object.keys(MEM_COLORS)
-export const SIZE = 4
-
-const cellName = (idx) => `row ${Math.floor(idx / SIZE) + 1}, column ${(idx % SIZE) + 1}`
-
-export function generateMemory(seed, focusTrap) {
+export function generateMemory(seed, focusTrap, { size = 4, objects = 8, changes: nChanges = 3 } = {}) {
+  const SIZE = size
+  const cellName = (idx) => `row ${Math.floor(idx / SIZE) + 1}, column ${(idx % SIZE) + 1}`
   const rng = makeRng(seed)
-  const cells = rng.sample([...Array(SIZE * SIZE).keys()], 8)
+  const cells = rng.sample([...Array(SIZE * SIZE).keys()], objects)
   const before = Array(SIZE * SIZE).fill(null)
   for (const c of cells) before[c] = { shape: rng.pick(SHAPES), color: rng.pick(COLOR_KEYS) }
   const after = before.map((o) => (o ? { ...o } : null))
 
   let types
-  if (focusTrap === 'spatial') types = ['moved', 'moved', rng.pick(['recolored', 'reshaped'])]
-  else if (focusTrap === 'similar') types = ['recolored', 'reshaped', rng.pick(['moved', 'recolored'])]
-  else types = rng.shuffle(['moved', 'recolored', 'reshaped', 'added', 'moved']).slice(0, 3)
+  if (focusTrap === 'spatial') types = ['moved', 'moved', 'moved', rng.pick(['recolored', 'reshaped'])]
+  else if (focusTrap === 'similar') types = ['recolored', 'reshaped', 'recolored', 'moved']
+  else types = rng.shuffle(['moved', 'recolored', 'reshaped', 'added', 'moved'])
+  types = types.slice(0, nChanges)
 
   const changes = []
   const touched = new Set()
@@ -47,5 +46,5 @@ export function generateMemory(seed, focusTrap) {
       changes.push({ cell: c, type: t, trap: 'small-print', label: `A new ${after[c].color} ${after[c].shape} appeared`, why: `It was added at ${cellName(c)}.` })
     }
   }
-  return { before, after, changes }
+  return { before, after, changes, size: SIZE }
 }

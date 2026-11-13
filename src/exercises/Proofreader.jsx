@@ -2,19 +2,28 @@ import { useMemo, useRef, useState } from 'react'
 import { PROOF_DOCS, parseDoc } from '../data/proofreader.js'
 import { makeRng } from '../lib/rng.js'
 import { Button } from '../components/ui.jsx'
+import { generateProofDoc } from '../data/proofGen.js'
+import { levelParams } from './levels.js'
 
-export function pickDoc(seed, focusTrap) {
+// Curated documents are used when one fits your level and you haven't seen it
+// recently; otherwise a fresh document is generated at your level.
+export function pickDoc(seed, focusTrap, level = 2, recent = []) {
   const rng = makeRng(seed)
-  if (focusTrap) {
-    const scored = PROOF_DOCS.map((d) => ({ d, n: parseDoc(d.text).filter((s) => s.trap === focusTrap).length }))
-    const best = Math.max(...scored.map((x) => x.n))
-    if (best > 0) return rng.pick(scored.filter((x) => x.n === best)).d
+  const fresh = PROOF_DOCS.filter((d) => !recent.includes(d.id) && Math.abs((d.level || 3) - level) <= 1)
+  if (fresh.length && rng.next() < 0.45) {
+    if (focusTrap) {
+      const scored = fresh.map((d) => ({ d, n: parseDoc(d.text).filter((s) => s.trap === focusTrap).length }))
+      const best = Math.max(...scored.map((x) => x.n))
+      if (best > 0) return rng.pick(scored.filter((x) => x.n === best)).d
+    }
+    return rng.pick(fresh)
   }
-  return rng.pick(PROOF_DOCS)
+  return generateProofDoc(seed + ':gen', levelParams('proofreader', level).errors)
 }
 
-export default function Proofreader({ seed, focusTrap, onDone }) {
-  const doc = useMemo(() => pickDoc(seed, focusTrap), [seed, focusTrap])
+export default function Proofreader({ seed, focusTrap, level = 2, blind = false, recent = [], onDone }) {
+  const doc = useMemo(() => pickDoc(seed, focusTrap, level, recent), [seed, focusTrap, level]) // eslint-disable-line react-hooks/exhaustive-deps
+  const hideCount = blind || !levelParams('proofreader', level).showCount
   // Flatten into tokens: whitespace (inert), words (tappable), errors (tappable).
   const tokens = useMemo(() => {
     const out = []
@@ -39,12 +48,12 @@ export default function Proofreader({ seed, focusTrap, onDone }) {
       correct: marked.has(i), why: t.seg.why,
     }))
     const falseFlags = [...marked].filter((i) => tokens[i].kind === 'word').map((i) => ({ label: `“${tokens[i].text}” was correct` }))
-    onDone({ items, falseFlags, answerMs: Date.now() - start.current, meta: { docId: doc.id } })
+    onDone({ items, falseFlags, answerMs: Date.now() - start.current, contentId: doc.id })
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-ink-2">This {doc.kind.toLowerCase()} contains <b>{errorCount} errors</b> — spelling, numbers that don't add up, and details that contradict each other. Tap each wrong word or figure. Tap again to unmark.</p>
+      <p className="text-ink-2">This {doc.kind.toLowerCase()} contains <b>{hideCount ? 'several errors' : `${errorCount} errors`}</b> — spelling, numbers that don't add up, and details that contradict each other. Tap each wrong word or figure. Tap again to unmark.{hideCount && ' You decide when you’re done.'}</p>
       <div className="rounded-xl border border-line bg-bg p-4 sm:p-5">
         <div className="eyebrow mb-3">{doc.title}</div>
         <div className="whitespace-pre-wrap text-[15px] leading-7">
@@ -62,7 +71,7 @@ export default function Proofreader({ seed, focusTrap, onDone }) {
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={finish}>Check document</Button>
-        <span className="text-sm text-muted">{marked.size} marked · {errorCount} to find</span>
+        <span className="text-sm text-muted">{marked.size} marked{hideCount ? '' : ` · ${errorCount} to find`}</span>
       </div>
     </div>
   )

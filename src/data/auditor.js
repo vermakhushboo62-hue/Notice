@@ -50,6 +50,30 @@ export const TABLES = [
     ],
   },
   {
+    id: 'timesheet', title: 'Weekly timesheet', columns: ['Day', 'Project', 'Start', 'End', 'Hours'],
+    rows: [
+      ['Mon 12', 'Atlas rebrand', '08:45', '17:15', '7.5'],
+      ['Tue 13', 'Atlas rebrand', '09:00', '17:30', '7.5'],
+      ['Wed 14', 'Harbour app', '08:30', '16:00', '6.5'],
+      ['Thu 15', 'Harbour app', '09:15', '18:45', '8.5'],
+      ['Fri 16', 'Internal training', '09:00', '13:00', '4.0'],
+      ['Sat 17', 'Harbour app', '10:00', '12:30', '2.5'],
+      ['Total', '—', '—', '—', '36.5'],
+    ],
+  },
+  {
+    id: 'kpi', title: 'Monthly KPI report', columns: ['Metric', 'March', 'April', 'Change'],
+    rows: [
+      ['Website sessions', '48,210', '52,640', '+9.2%'],
+      ['Sign-ups', '1,384', '1,512', '+9.2%'],
+      ['Conversion rate', '2.87%', '2.87%', '0.0%'],
+      ['Email open rate', '41.3%', '39.8%', '-1.5 pts'],
+      ['Cost per lead', '£18.40', '£16.75', '-9.0%'],
+      ['Churn', '2.4%', '2.1%', '-0.3 pts'],
+      ['NPS', '46', '49', '+3'],
+    ],
+  },
+  {
     id: 'contacts', title: 'Event guest list', columns: ['Name', 'Company', 'Email', 'Table'],
     rows: [
       ['Eleanor Whitfield', 'Marlow & Co', 'e.whitfield@marlow.co', '3'],
@@ -113,18 +137,19 @@ export function mutateCell(value, rng, prefer) {
   return rng.pick(preferred.length ? preferred : fns)
 }
 
-export function generateAudit(seed, focusTrap) {
+export function generateAudit(seed, focusTrap, { diffs = 5, subtle = 0 } = {}) {
   const rng = makeRng(seed)
   const table = rng.pick(TABLES)
   const cells = []
   table.rows.forEach((row, r) => row.forEach((v, c) => { if (v !== '—') cells.push([r, c]) }))
   const changes = []
   const b = table.rows.map((row) => row.slice())
-  const target = 5
+  const target = Math.min(diffs, cells.length)
+  const onePerRow = target <= table.rows.length
   for (const [r, c] of rng.shuffle(cells)) {
     if (changes.length >= target) break
-    if (changes.some((ch) => ch.r === r)) continue // at most one change per row keeps it fair
-    const prefer = focusTrap && rng.next() < 0.7 ? focusTrap : null
+    if (onePerRow && changes.some((ch) => ch.r === r)) continue // one change per row when the table allows
+    const prefer = focusTrap && rng.next() < 0.7 ? focusTrap : rng.next() < subtle ? rng.pick(['similar', 'small-print']) : null
     const m = mutateCell(table.rows[r][c], rng, prefer)
     if (!m || m.value === table.rows[r][c]) continue
     b[r][c] = m.value

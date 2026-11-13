@@ -3,6 +3,7 @@
 export const PROOF_DOCS = [
   {
     id: 'proposal-greenleaf',
+    level: 3,
     title: 'Business proposal',
     kind: 'Proposal',
     week: 2,
@@ -34,6 +35,7 @@ Northline Studio`,
   },
   {
     id: 'email-offsite',
+    level: 2,
     title: 'Team email',
     kind: 'Email',
     week: 4,
@@ -66,6 +68,7 @@ Sam`,
   },
   {
     id: 'instructions-espresso',
+    level: 2,
     title: 'Written instructions',
     kind: 'Instructions',
     week: 3,
@@ -88,6 +91,7 @@ Note: Hold CLEAN for 5 seconds. A short press only switches the light on.`,
   },
   {
     id: 'update-q3',
+    level: 4,
     title: 'Presentation notes',
     kind: 'Presentation',
     week: 4,
@@ -115,6 +119,7 @@ Team footnote: New in Q3 — engineers Lee, Okafor, Brandt; designer Ana Ruiz.`,
   },
   {
     id: 'invoice-note',
+    level: 3,
     title: 'Invoice cover note',
     kind: 'Finance',
     week: 3,
@@ -142,6 +147,7 @@ Thank you for your business — it was a pleasure working with the {{Carter & We
   },
   {
     id: 'campaign-brief',
+    level: 4,
     title: 'Campaign brief',
     kind: 'Marketing',
     week: 4,

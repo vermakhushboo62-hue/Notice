@@ -1,11 +1,11 @@
 import { useMemo, useRef, useState } from 'react'
-import { generateMemory, SIZE } from './memoryGen.js'
+import { generateMemory } from './memoryGen.js'
+import { levelParams } from './levels.js'
 import Shape from './Shape.jsx'
 import { Button, Countdown } from '../components/ui.jsx'
 
-const STUDY_SECONDS = 15
-
-function Grid({ cells, selected, onTap, reveal }) {
+function Grid({ cells, size, selected, onTap, reveal }) {
+  const SIZE = size
   return (
     <div className="mx-auto grid max-w-sm gap-1.5 rounded-xl bg-surface-2 p-1.5" style={{ gridTemplateColumns: `repeat(${SIZE}, 1fr)` }}>
       {cells.map((o, i) => {
@@ -29,8 +29,12 @@ function Grid({ cells, selected, onTap, reveal }) {
   )
 }
 
-export default function Memory({ seed, focusTrap, onDone }) {
-  const data = useMemo(() => generateMemory(seed, focusTrap), [seed, focusTrap])
+export default function Memory({ seed, focusTrap, level = 2, onDone }) {
+  const params = levelParams('memory', level)
+  const STUDY_SECONDS = params.study
+  const SIZE = params.size
+  const N = params.changes
+  const data = useMemo(() => generateMemory(seed, focusTrap, params), [seed, focusTrap, level]) // eslint-disable-line react-hooks/exhaustive-deps
   const [phase, setPhase] = useState('ready')
   const [selected, setSelected] = useState(new Set())
   const start = useRef(0)
@@ -38,7 +42,7 @@ export default function Memory({ seed, focusTrap, onDone }) {
   if (phase === 'ready') {
     return (
       <div className="space-y-5">
-        <p className="text-ink-2">Study an arrangement of shapes for <b>{STUDY_SECONDS} seconds</b>. Then you'll see it again with <b>three changes</b> — something moved, changed colour, changed shape or appeared. Tap the three that changed.</p>
+        <p className="text-ink-2">Study an arrangement of shapes for <b>{STUDY_SECONDS} seconds</b>. Then you'll see it again with <b>{N} changes</b> — something moved, changed colour, changed shape or appeared. Tap the {N} that changed.</p>
         <Button onClick={() => setPhase('study')}>I'm ready</Button>
       </div>
     )
@@ -47,7 +51,7 @@ export default function Memory({ seed, focusTrap, onDone }) {
     return (
       <div className="space-y-4">
         <Countdown seconds={STUDY_SECONDS} onEnd={() => setPhase('gap')} />
-        <Grid cells={data.before} />
+        <Grid cells={data.before} size={SIZE} />
       </div>
     )
   }
@@ -63,7 +67,7 @@ export default function Memory({ seed, focusTrap, onDone }) {
   const toggle = (i) => {
     const s = new Set(selected)
     if (s.has(i)) s.delete(i)
-    else if (s.size < 4) s.add(i)
+    else if (s.size < N + 2) s.add(i)
     setSelected(s)
   }
   const finish = () => {
@@ -74,12 +78,12 @@ export default function Memory({ seed, focusTrap, onDone }) {
       return { id: `m${k}`, label: c.label, skill: 'recall', trap: c.trap, correct: hit != null, why: c.why }
     })
     const falseFlags = [...selected].filter((i) => !used.has(i)).map((i) => ({ label: `Row ${Math.floor(i / SIZE) + 1}, column ${(i % SIZE) + 1} hadn't changed` }))
-    onDone({ items, falseFlags, answerMs: Date.now() - start.current })
+    onDone({ items, falseFlags, answerMs: Date.now() - start.current, contentId: null })
   }
   return (
     <div className="space-y-4">
-      <p className="text-ink-2">Three things changed. Tap them <span className="text-muted">({selected.size} selected)</span>.</p>
-      <Grid cells={data.after} selected={selected} onTap={toggle} />
+      <p className="text-ink-2">{N} things changed. Tap them <span className="text-muted">({selected.size} selected)</span>.</p>
+      <Grid cells={data.after} size={SIZE} selected={selected} onTap={toggle} />
       <Button onClick={finish} disabled={!selected.size}>Check my answer</Button>
     </div>
   )

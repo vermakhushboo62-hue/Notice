@@ -36,7 +36,7 @@ export function generateScene(seed) {
 const fmtTime = (h, m) => `${h}:${String(m).padStart(2, '0')}`
 const near = (n, rng, lo = 1) => rng.shuffle([...new Set([n, n + 1, n - 1, n + 2, n - 2].filter((x) => x >= lo))].slice(0, 4))
 
-export function buildQuestions(scene, seed, focusTrap) {
+export function buildQuestions(scene, seed, focusTrap, count = 5, hard = false) {
   const rng = makeRng(seed + ':q')
   const opposite = (s) => (s === 'left' ? 'right' : 'left')
   const pool = [
@@ -62,10 +62,22 @@ export function buildQuestions(scene, seed, focusTrap) {
     { id: 'notes', trap: 'small-print', prompt: 'How many sticky notes were on the wall?', answer: String(scene.notes),
       options: ['1', '2', '3', '4'], why: `There were ${scene.notes} sticky notes beside the window.` },
   ]
+  if (hard) {
+    pool.push(
+      { id: 'leaves', trap: 'small-print', prompt: 'How many leaves did the plant have?', answer: String(scene.leaves),
+        options: near(scene.leaves, rng, 2).map(String), why: `The plant had ${scene.leaves} leaves.` },
+      { id: 'chair', trap: 'similar', prompt: 'What colour was the stool under the desk?', answer: scene.chair,
+        options: rng.shuffle([scene.chair, ...rng.sample(Object.keys(COLORS).filter((c) => c !== scene.chair), 3)]), why: `The stool was ${scene.chair}.` },
+      { id: 'pot', trap: 'similar', prompt: 'What colour was the plant pot?', answer: scene.pot,
+        options: rng.shuffle([scene.pot, ...rng.sample(Object.keys(COLORS).filter((c) => c !== scene.pot), 3)]), why: `The pot was ${scene.pot}.` },
+      { id: 'mugside', trap: 'spatial', prompt: 'Was the mug to the left or right of the pencil cup?', answer: scene.lampSide === 'left' ? 'Right' : 'Left',
+        options: ['Left', 'Right'], why: `The mug was to the ${scene.lampSide === 'left' ? 'right' : 'left'} of the pencil cup.` },
+    )
+  }
   let chosen = []
   if (focusTrap) chosen = rng.shuffle(pool.filter((q) => q.trap === focusTrap)).slice(0, 3)
   const rest = rng.shuffle(pool.filter((q) => !chosen.includes(q)))
-  chosen = rng.shuffle([...chosen, ...rest].slice(0, 5))
+  chosen = rng.shuffle([...chosen, ...rest].slice(0, count))
   return chosen.map((q) => ({ ...q, skill: 'visual' }))
 }
 

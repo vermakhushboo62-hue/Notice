@@ -2,9 +2,18 @@ import { useMemo, useRef, useState } from 'react'
 import { CASES, VERDICTS } from '../data/detective.js'
 import { makeRng } from '../lib/rng.js'
 import { Button } from '../components/ui.jsx'
+import { generateCase } from '../data/detectiveGen.js'
+import { levelParams } from './levels.js'
 
-export function pickCase(seed, focusTrap) {
+export function pickCase(seed, focusTrap, count = 5, recent = []) {
   const rng = makeRng(seed)
+  const fresh = CASES.filter((c) => !recent.includes(c.id))
+  if (count > 5 || !fresh.length || rng.next() < 0.5) return generateCase(seed + ':gen', count)
+  const kase = pickCurated(rng, fresh, focusTrap)
+  return { ...kase, statements: rng.sample(kase.statements, count) }
+}
+
+function pickCurated(rng, CASES, focusTrap) {
   if (focusTrap) {
     const scored = CASES.map((c) => ({ c, n: c.statements.filter((s) => s.trap === focusTrap).length }))
     const best = Math.max(...scored.map((x) => x.n))
@@ -13,8 +22,8 @@ export function pickCase(seed, focusTrap) {
   return rng.pick(CASES)
 }
 
-export default function Detective({ seed, focusTrap, onDone }) {
-  const kase = useMemo(() => pickCase(seed, focusTrap), [seed, focusTrap])
+export default function Detective({ seed, focusTrap, level = 2, recent = [], onDone }) {
+  const kase = useMemo(() => pickCase(seed, focusTrap, levelParams('detective', level).statements, recent), [seed, focusTrap, level]) // eslint-disable-line react-hooks/exhaustive-deps
   const statements = useMemo(() => makeRng(seed + ':order').shuffle(kase.statements), [kase, seed])
   const [answers, setAnswers] = useState({})
   const start = useRef(Date.now())
@@ -25,7 +34,7 @@ export default function Detective({ seed, focusTrap, onDone }) {
       id: `d${i}`, label: s.text, skill: s.skill, trap: s.trap, correct: answers[i] === s.verdict,
       yours: VERDICTS[answers[i]].label, answer: VERDICTS[s.verdict].label, why: s.why,
     }))
-    onDone({ items, falseFlags: [], answerMs: Date.now() - start.current, meta: { caseId: kase.id } })
+    onDone({ items, falseFlags: [], answerMs: Date.now() - start.current, contentId: kase.id })
   }
 
   return (

@@ -6,6 +6,8 @@ import { sampleState } from './lib/sample.js'
 import { EXERCISE_COMPONENTS } from './exercises/index.js'
 import Dashboard from './components/Dashboard.jsx'
 import Results from './components/Results.jsx'
+import Programme from './components/Programme.jsx'
+import { abilityLevels } from './lib/program.js'
 import { Button, Card, Elapsed } from './components/ui.jsx'
 
 export default function App() {
@@ -24,18 +26,28 @@ export default function App() {
   const streakCount = streak(state, today)
   const weekly = weeklyAccuracy(state, today)
 
-  const begin = (exercise, mode, focusTrap = null) => {
-    const seed = mode === 'daily' ? `${today}:${exercise}` : `${Date.now()}:${exercise}`
-    setView({ name: 'play', exercise, mode, focusTrap, seed, startedAt: Date.now() })
+  const begin = (exercise, mode, { focusTrap = null, level, blind = false } = {}) => {
+    const attempt = state.results.filter((r) => r.date === today && r.mode === mode).length
+    const seed = mode === 'daily' ? `${today}:${exercise}:${attempt}` : `${Date.now()}:${exercise}`
+    const lvl = level || abilityLevels(state)[exercise].level
+    setView({ name: 'play', exercise, mode, focusTrap, level: lvl, blind, seed, startedAt: Date.now() })
   }
   const startDaily = () => {
-    const plan = planForDay(state, day)
-    begin(plan.exercise, 'daily', plan.focusTrap)
+    const plan = planForDay(state, day, today)
+    begin(plan.exercise, 'daily', plan)
+  }
+  const recent = state.results.slice(-30).map((r) => r.contentId).filter(Boolean)
+  const leave = () => {
+    if (!confirm('Leave this challenge? It will be recorded as left early, and your next session will be a little lighter.')) return
+    const r = { id: `${view.mode}-${Date.now()}`, date: today, day: view.mode === 'daily' ? day : null, mode: view.mode, exercise: view.exercise,
+      level: view.level, abandoned: true, items: [], falseFlags: [], answerMs: 0, durationMs: Date.now() - view.startedAt }
+    setState((s) => ({ ...s, results: [...s.results, r] }))
+    setView({ name: 'home' })
   }
   const finish = (payload) => {
     const r = {
       id: `${view.mode}-${Date.now()}`, date: today, day: view.mode === 'daily' ? day : null, mode: view.mode,
-      exercise: view.exercise, focusTrap: view.focusTrap, ...payload, meta: undefined, durationMs: Date.now() - view.startedAt,
+      exercise: view.exercise, focusTrap: view.focusTrap, level: view.level, ...payload, durationMs: Date.now() - view.startedAt,
     }
     const diag = diagnose(r, r.day)
     r.summary = diag.summary
@@ -45,6 +57,7 @@ export default function App() {
 
   const nav = [
     ['home', 'Today'],
+    ['programme', 'Programme'],
     ['practice', 'Practice'],
     ['settings', 'Settings'],
   ]
@@ -59,10 +72,10 @@ export default function App() {
           <div className="mt-1 text-sm text-ink-2">Daily practice · Train your eyes. Sharpen your mind.</div>
         </button>
         {view.name !== 'play' && (
-          <nav className="flex gap-1 rounded-full border border-line bg-surface p-1 text-sm" aria-label="Main">
+          <nav className="flex w-full gap-0.5 rounded-full border border-line bg-surface p-1 text-[13px] sm:w-auto sm:gap-1 sm:text-sm" aria-label="Main">
             {nav.map(([k, label]) => (
               <button key={k} type="button" onClick={() => setView({ name: k })} aria-current={view.name === k ? 'page' : undefined}
-                className={`rounded-full px-4 py-1.5 font-medium transition ${view.name === k || (k === 'home' && view.name === 'result') ? 'bg-ink text-bg' : 'text-ink-2 hover:text-ink'}`}>{label}</button>
+                className={`flex-1 rounded-full px-2.5 py-1.5 font-medium transition sm:flex-none sm:px-4 ${view.name === k || (k === 'home' && view.name === 'result') ? 'bg-ink text-bg' : 'text-ink-2 hover:text-ink'}`}>{label}</button>
             ))}
           </nav>
         )}
@@ -77,7 +90,7 @@ export default function App() {
 
       {view.name === 'home' && (
         <Dashboard state={state} today={today} day={day} todayResult={todayResult} streakCount={streakCount} weekly={weekly}
-          onStart={startDaily} onReview={(id) => setView({ name: 'result', id })} />
+          onStart={startDaily} onReview={(id) => setView({ name: 'result', id })} onProgramme={() => setView({ name: 'programme' })} />
       )}
 
       {view.name === 'play' && (
@@ -86,22 +99,23 @@ export default function App() {
             <div>
               <div className="eyebrow">{view.mode === 'daily' ? `Day ${String(day).padStart(2, '0')} · Today's challenge` : 'Practice'}</div>
               <h2 className="mt-1 font-display text-2xl">{EXERCISES[view.exercise].name}</h2>
-              <div className="text-sm text-accent">{EXERCISES[view.exercise].kind}</div>
+              <div className="text-sm text-accent">{EXERCISES[view.exercise].kind} · Level {view.level}</div>
             </div>
             <div className="flex flex-col items-end gap-2">
               <Elapsed since={view.startedAt} />
-              <button type="button" className="text-xs text-muted hover:text-ink" onClick={() => { if (confirm('Leave this challenge? Progress on it will be lost.')) setView({ name: 'home' }) }}>Leave</button>
+              <button type="button" className="text-xs text-muted hover:text-ink" onClick={leave}>Leave</button>
             </div>
           </div>
-          <Ex key={view.seed} seed={view.seed} focusTrap={view.focusTrap} onDone={finish} />
+          <Ex key={view.seed} seed={view.seed} focusTrap={view.focusTrap} level={view.level} blind={view.blind} recent={recent} onDone={finish} />
         </Card>
       )}
 
       {view.name === 'result' && result && (
-        <Results result={result} streakCount={streakCount} weekly={weekly} onHome={() => setView({ name: 'home' })}
+        <Results result={result} state={state} streakCount={streakCount} weekly={weekly} onHome={() => setView({ name: 'home' })}
           onPractice={() => setView({ name: 'practice' })} />
       )}
 
+      {view.name === 'programme' && <Programme state={state} day={day} />}
       {view.name === 'practice' && <Practice onBegin={(ex) => begin(ex, 'practice')} />}
       {view.name === 'settings' && <Settings state={state} setState={setState} />}
 
@@ -117,7 +131,7 @@ function Practice({ onBegin }) {
     <div className="space-y-5">
       <Card>
         <h2 className="font-display text-2xl">Practice room</h2>
-        <p className="mt-2 max-w-2xl text-ink-2">Try any exercise with fresh content. Practice feeds your Attention Profile but doesn't count toward your streak or the 30-day programme.</p>
+        <p className="mt-2 max-w-2xl text-ink-2">Try any exercise with fresh content. Practice runs at your current level for that exercise. It feeds your Attention Profile and levels, but doesn't count toward your streak or the 90-day programme.</p>
       </Card>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {EXERCISE_ORDER.map((k) => {
@@ -172,7 +186,7 @@ function Settings({ state, setState }) {
       <Card>
         <h3 className="font-display text-lg">How NOTICE works</h3>
         <div className="mt-3 space-y-3 text-sm leading-relaxed text-ink-2">
-          <p><b className="text-ink">One 5-minute challenge a day.</b> Odd days follow a 30-day programme — notice, compare, verify, apply. Even days are adaptive: they target the trap you fell for most recently, or your weakest skill.</p>
+          <p><b className="text-ink">One 5-minute challenge a day</b> across a 90-day programme: Foundations, Depth, Mastery. Each day's exercise and level are mixed and matched from how well — and how reliably — you finish your sessions.</p>
           <p><b className="text-ink">Noticing more vs. making fewer mistakes.</b> NOTICE trains four related abilities: visual attention (noticing a small inconsistency), critical evaluation (catching a claim that doesn't hold), recall (remembering what you saw), and analytical accuracy (checking one number against another).</p>
           <p><b className="text-ink">Every result explains itself:</b> what you noticed, what you missed, why you probably missed it, and what you'll practise next.</p>
           <p className="text-xs text-muted">Scores reflect performance on these exercises only. They are not a cognitive, personality or health assessment.</p>

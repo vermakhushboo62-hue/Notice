@@ -1,8 +1,12 @@
 import { EXERCISES, SKILLS, TRAP_TO_EXERCISE } from '../lib/constants.js'
 import { accuracyOf, diagnose, formatMs, scoreOf } from '../lib/engine.js'
+import { abilityLevels } from '../lib/program.js'
 import { Button, Card, Stat } from './ui.jsx'
 
-export default function Results({ result, streakCount, weekly, onHome, onPractice }) {
+export default function Results({ result, state, streakCount, weekly, onHome, onPractice }) {
+  const idx = state.results.findIndex((r) => r.id === result.id)
+  const before = abilityLevels({ results: state.results.slice(0, idx) })[result.exercise].level
+  const after = abilityLevels({ results: state.results.slice(0, idx + 1) })[result.exercise].level
   const diag = diagnose(result, result.mode === 'daily' ? result.day : null)
   const { correct, total } = scoreOf(result)
   const acc = Math.round(accuracyOf(result) * 100)
@@ -10,7 +14,7 @@ export default function Results({ result, streakCount, weekly, onHome, onPractic
   return (
     <div className="space-y-5">
       <Card>
-        <div className="eyebrow">{result.mode === 'daily' ? `Day ${String(result.day).padStart(2, '0')} · ` : 'Practice · '}{ex.name}</div>
+        <div className="eyebrow">{result.mode === 'daily' ? `Day ${String(result.day).padStart(2, '0')} · ` : 'Practice · '}{ex.name}{result.level ? ` · Level ${result.level}` : ''}</div>
         <h2 className="mt-2 font-display text-2xl sm:text-3xl">{result.mode === 'daily' ? 'Your daily scorecard' : 'Your scorecard'}</h2>
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Stat label="Accuracy" value={`${correct}/${total}`} sub={result.falseFlags?.length ? `${acc}% · ${result.falseFlags.length} false flag${result.falseFlags.length > 1 ? 's' : ''}` : `${acc}%`} />
@@ -19,6 +23,13 @@ export default function Results({ result, streakCount, weekly, onHome, onPractic
           <Stat label="Weekly accuracy" value={weekly == null ? '—' : `${weekly}%`} />
         </div>
         <p className="mt-5 rounded-xl bg-accent-soft px-4 py-3 text-[15px] leading-relaxed">{diag.summary}</p>
+        {after !== before && (
+          <p className={`mt-3 rounded-xl px-4 py-3 text-sm ${after > before ? 'bg-good-soft' : 'bg-surface-2'}`}>
+            {after > before
+              ? <><b>Level up.</b> Two strong sessions in a row: {ex.name} moves to level {after}.</>
+              : <><b>{ex.name} eases to level {after}.</b> This one was a stretch — the next one will be a bit lighter so you can rebuild.</>}
+          </p>
+        )}
       </Card>
 
       <div className="grid gap-5 md:grid-cols-2">

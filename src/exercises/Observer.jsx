@@ -2,12 +2,12 @@ import { useMemo, useRef, useState } from 'react'
 import { generateScene, buildQuestions } from './observerScene.js'
 import ObserverScene from './ObserverScene.jsx'
 import { Button, Choice, Countdown } from '../components/ui.jsx'
+import { levelParams } from './levels.js'
 
-const STUDY_SECONDS = 20
-
-export default function Observer({ seed, focusTrap, onDone }) {
+export default function Observer({ seed, focusTrap, level = 2, onDone }) {
+  const { study: STUDY_SECONDS, questions: Q, hard } = levelParams('observer', level)
   const scene = useMemo(() => generateScene(seed), [seed])
-  const questions = useMemo(() => buildQuestions(scene, seed, focusTrap), [scene, seed, focusTrap])
+  const questions = useMemo(() => buildQuestions(scene, seed, focusTrap, Q, hard), [scene, seed, focusTrap, Q, hard])
   const [phase, setPhase] = useState('ready') // ready | study | quiz
   const [i, setI] = useState(0)
   const [answers, setAnswers] = useState([])
@@ -17,7 +17,7 @@ export default function Observer({ seed, focusTrap, onDone }) {
   if (phase === 'ready') {
     return (
       <div className="space-y-5">
-        <p className="text-ink-2">You'll see a room for <b>{STUDY_SECONDS} seconds</b>. Then it disappears and you answer 5 questions about small details. Look at everything — counts, colours, positions, text.</p>
+        <p className="text-ink-2">You'll see a room for <b>{STUDY_SECONDS} seconds</b>. Then it disappears and you answer {Q} questions about small details. Look at everything — counts, colours, positions, text.</p>
         <Button onClick={() => setPhase('study')}>I'm ready — show the scene</Button>
       </div>
     )
@@ -42,7 +42,7 @@ export default function Observer({ seed, focusTrap, onDone }) {
       id: qq.id, label: qq.prompt, skill: qq.skill, trap: qq.trap, correct: next[k] === qq.answer,
       yours: next[k], answer: qq.answer, why: qq.why,
     }))
-    onDone({ items, falseFlags: [], answerMs: Date.now() - answerStart.current, meta: { scene } })
+    onDone({ items, falseFlags: [], answerMs: Date.now() - answerStart.current, contentId: null })
   }
   return (
     <div className="space-y-4">
