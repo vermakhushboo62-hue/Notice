@@ -1,0 +1,13 @@
+{
+  "name": "NOTICE — Daily practice",
+  "short_name": "NOTICE",
+  "description": "A daily 5-minute practice for sharper observation and attention to detail.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f3ec",
+  "theme_color": "#1d1c1a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
