@@ -71,7 +71,7 @@ npm run build    # production build in dist/
 
 ### Deploying
 
-**Cloudflare Pages (recommended for phone use):** in the Cloudflare dashboard go to *Workers & Pages → Create → Pages → Connect to Git*, pick this repository and use build command `npm run build`, output directory `dist`. Every push to `main` redeploys. `public/_headers` makes sure phones pick up new versions promptly.
+**Cloudflare (recommended for phone use):** connect this repository under *Workers & Pages → Create* with build command `npm run build` and deploy command `npx wrangler deploy`. `wrangler.jsonc` serves `dist/` as static assets, so no auto-configuration is needed. Every push to `main` redeploys. `public/_headers` makes sure phones pick up new versions promptly.
 
 **GitHub Pages:** 
 `.github/workflows/deploy.yml` builds, tests and deploys to GitHub Pages on every push to `main`. Enable it once under **Settings → Pages → Build and deployment → Source: GitHub Actions**.
